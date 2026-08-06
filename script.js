@@ -80,38 +80,68 @@ document.addEventListener('DOMContentLoaded', function () {
 
         openBtn.addEventListener('click', function () {
 
-            // كونفيتي احتفالي عند الفتح
-            if (window.confetti && !reduceMotion) {
-                window.confetti({
-                    particleCount: 120,
-                    spread: 90,
-                    startVelocity: 45,
-                    origin: { y: 0.6 },
-                    colors: ['#a9832c', '#e6d9b8', '#7c8a5c', '#9aa878', '#ffffff']
-                });
-            }
-
-            cover.classList.add('fade-out');
-            invite.classList.add('show');
-
-            // محاولة تشغيل الموسيقى تلقائياً بعد أول تفاعل من المستخدم
-            if (music) {
-                music.volume = 0.5;
-                music.play().then(function () {
-                    if (musicBtn) musicBtn.classList.add('playing');
-                }).catch(function () {
-                    // المتصفح منع التشغيل التلقائي، المستخدم يقدر يضغط زر الموسيقى يدوياً
-                });
-            }
-
-            window.setTimeout(function () {
-                cover.style.display = 'none';
-                document.body.style.overflow = '';
-                revealVisibleSections();
-            }, 850);
+    // كونفيتي
+    if (window.confetti && !reduceMotion) {
+        window.confetti({
+            particleCount: 120,
+            spread: 90,
+            startVelocity: 45,
+            origin: { y: 0.6 },
+            colors: ['#a9832c', '#e6d9b8', '#7c8a5c', '#9aa878', '#ffffff']
         });
+    }
 
-        document.body.style.overflow = 'hidden';
+    cover.classList.add('fade-out');
+
+    // تشغيل الموسيقى
+    if (music) {
+        music.volume = 0.5;
+        music.play().then(() => {
+            musicBtn?.classList.add('playing');
+        }).catch(() => {});
+    }
+
+    setTimeout(() => {
+
+    cover.style.display = "none";
+    invite.classList.add("show");
+
+    document.body.style.overflow = "";
+
+    revealVisibleSections();
+
+    // يبدأ النزول بعد فتح الدعوة
+    setTimeout(() => {
+        slowScrollToBottom(); // 12 ثانية
+    }, 300);
+
+}, 850);
+
+
+// ===============================
+// Slow Auto Scroll
+// ===============================
+function slowScrollToBottom() {
+
+    const speed = 1.8; // عدد البكسلات في كل حركة (كل ما يقل يبقى أبطأ)
+
+    const interval = setInterval(() => {
+
+        window.scrollBy(0, speed);
+
+        const bottomReached =
+            window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+
+        if (bottomReached) {
+            clearInterval(interval);
+        }
+
+    }, 16); // حوالي 60 إطار في الثانية
+}
+
+});
+
+document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------

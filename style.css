@@ -5,11 +5,11 @@
 
 :root{
 
-    --bg:#ffffff;
+    --bg:#FDF4F7;
     --bg-card:#fffdfb;
     --pink:#a9832c;        /* اللون الرئيسي: ذهبي دافئ (بدل الوردي) */
     --pink-soft:#e6d9b8;   /* درجة ذهبية فاتحة */
-    --pink-pale:#f8f4ea;   /* كريمي باهت لخلفيات الأقسام */
+    --pink-pale:#f6f0e1;   /* كريمي باهت لخلفيات الأقسام */
     --gold:#7c8a5c;        /* أخضر سيدج (لون الأوراق) */
     --gold-light:#9aa878;  /* أخضر سيدج فاتح */
     --ink:#362f27;
@@ -31,7 +31,12 @@ html{font-size:16px;scroll-behavior:smooth;}
 
 body{
     font-family:var(--font-arabic);
-    background:var(--bg);
+     background: linear-gradient(
+        180deg,
+        #FFF9FB 0%,
+        #FDF3F6 50%,
+        #FCF7F1 100%
+    );
     color:var(--ink);
     width:100%;
     min-height:100vh;
@@ -61,19 +66,30 @@ body{
     100%{transform:translateY(110vh) rotate(320deg);opacity:.15;}
 }
 
-/* ---------- Cover screen ---------- */
+/* ---------- Cover screen (التصميم الجديد) ---------- */
 
 #cover{
     position:fixed;
     inset:0;
-    z-index:1000;
+
+    z-index:9999;
+
     display:flex;
-    align-items:center;
     justify-content:center;
+    align-items:center;
+
     padding:20px;
-    background:radial-gradient(circle at 50% 20%,#fff 0%,var(--bg) 70%);
-    overflow-y:auto;
-    transition:opacity .8s ease;
+
+    background:#5B6820;
+
+    overflow:hidden;
+
+    opacity:1;
+    visibility:visible;
+
+    transition:
+        opacity .8s ease,
+        visibility .8s ease;
 }
 
 #cover.fade-out{
@@ -81,31 +97,188 @@ body{
     pointer-events:none;
 }
 
-.cover-flowers{
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-}
+/* Card */
 
-.cover-flowers img{
-    position:absolute;
-    width:64px;
-    height:auto;
-    opacity:.55;
-}
-
-.cover-flowers img:nth-child(1){top:6%;left:6%;transform:rotate(-12deg);}
-.cover-flowers img:nth-child(2){top:8%;right:6%;transform:rotate(18deg) scaleX(-1);}
-.cover-flowers img:nth-child(3){bottom:8%;left:8%;transform:rotate(10deg);}
-.cover-flowers img:nth-child(4){bottom:5%;right:5%;transform:rotate(-16deg) scaleX(-1);}
-
-.cover-inner{
+.cover{
+    width:390px;
+    max-width:100%;
+    min-height:500px;
     position:relative;
-    width:100%;
-    max-width:460px;
+    background:#F9F7F3;
+    border-radius:18px;
+    overflow:hidden;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:30px;
+    border:1px solid rgba(255,255,255,.35);
+    box-shadow:0 25px 60px rgba(0,0,0,.30);
+    animation:coverIn .8s ease;
+    
 }
 
-/* ---------- Arch frame — العنصر المميز: برواز الورد ---------- */
+@keyframes coverIn{
+    from{
+        opacity:0;
+        transform:translateY(35px) scale(.96);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+/* Content */
+
+.cover-content{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    position:relative;
+    z-index:2;
+}
+
+/* Flowers */
+
+.flower{
+    position:absolute;
+    width:200px;
+    opacity:.88;
+    pointer-events:none;
+    user-select:none;
+}
+
+.flower-top{
+    top:-15px;
+    left:-15px;
+    transform:rotate(180deg);
+}
+
+.flower-bottom{
+    right:-15px;
+    bottom:-15px;
+}
+
+/* Heart */
+
+.heart{
+    width:60px;
+    height:60px;
+    margin-top:5px;
+    margin-bottom:25px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    border-radius:50%;
+    background:#49551D;
+    color:#fff;
+    font-size:24px;
+    box-shadow:0 10px 25px rgba(0,0,0,.18);
+}
+
+/* Names */
+
+.names{
+    margin:0;
+    text-align:center;
+    font-family:var(--font-serif);
+    font-size:50px;
+    font-weight:500;
+    line-height:1.05;
+    letter-spacing:1px;
+    color:#49551D;
+}
+
+.names span{
+    display:block;
+    margin:8px 0;
+    font-size:34px;
+}
+
+/* Divider */
+
+.divider{
+    width:170px;
+    height:1px;
+    margin:25px auto;
+    background:#C5BEAE;
+    position:relative;
+}
+
+.divider::after{
+    content:"❦";
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    background:#F9F7F3;
+    padding:0 12px;
+    color:#777;
+}
+
+/* Date */
+
+.date{
+    margin:0;
+    font-family:var(--font-serif);
+    font-size:24px;
+    color:#5E5A46;
+}
+
+/* Verse */
+
+.verse{
+    width:88%;
+    margin:28px auto 12px;
+    text-align:center;
+    direction:rtl;
+    unicode-bidi:isolate;
+    font-family:var(--font-arabic);
+    font-size:18px;
+    line-height:1.9;
+    color:#5F5F5F;
+}
+
+/* Welcome */
+
+.welcome{
+    width:88%;
+    margin:0;
+    text-align:center;
+    font-family:var(--font-arabic);
+    font-size:17px;
+    line-height:1.8;
+    color:#777;
+}
+
+/* Open button */
+
+.open-btn{
+    margin-top:auto;
+    width:140px;
+    height:50px;
+    border:none;
+    border-radius:999px;
+    background:#49551D;
+    color:#fff;
+    font-family:var(--font-serif);
+    font-size:22px;
+    cursor:pointer;
+    transition:
+    transform .3s ease,
+    box-shadow .3s ease,
+    background .3s ease;
+    box-shadow:0 10px 25px rgba(0,0 ,0,.20);
+}
+
+.open-btn:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 35px rgba(0,0,0,.25);
+}
+
+/* ---------- Arch frame — العنصر المميز: برواز الورد (شاشة الهيرو بعد الفتح) ---------- */
 
 .arch-frame{
     position:relative;
@@ -148,13 +321,6 @@ body{
     box-shadow:0 25px 60px rgba(70,55,30,.06);
 }
 
-.cover-title{
-    font-family:var(--font-script);
-    font-size:clamp(38px,10vw,58px);
-    color:var(--pink);
-    line-height:1.25;
-}
-
 .amp,.amp-block{
     display:inline-block;
     font-family:var(--font-serif);
@@ -162,57 +328,6 @@ body{
     color:var(--gold);
     margin:0 10px;
     font-size:.7em;
-}
-
-.ornament{
-    color:var(--gold);
-    font-size:20px;
-    margin:10px 0;
-}
-
-.cover-date{
-    font-family:var(--font-serif);
-    letter-spacing:3px;
-    color:var(--ink-soft);
-    text-transform:uppercase;
-    font-size:14px;
-    margin-bottom:18px;
-}
-
-.cover-verse{
-    font-size:15px;
-    line-height:2;
-    color:var(--ink);
-    margin-bottom:12px;
-}
-
-.cover-welcome{
-    font-size:14px;
-    color:var(--ink-soft);
-    line-height:1.9;
-    margin-bottom:6px;
-}
-
-#openBtn{
-    display:inline-block;
-    margin-top:22px;
-    padding:13px 46px;
-    border:1px solid var(--pink);
-    border-radius:40px;
-    background:transparent;
-    color:var(--pink);
-    font-family:var(--font-serif);
-    letter-spacing:3px;
-    text-transform:uppercase;
-    font-size:14px;
-    cursor:pointer;
-    transition:.3s;
-}
-
-#openBtn:hover{
-    background:var(--pink);
-    color:#fff;
-    box-shadow:0 12px 25px rgba(169,131,44,.25);
 }
 
 /* ---------- Sections (shared) ---------- */
@@ -318,6 +433,11 @@ body{
     padding:26px 22px;
     min-width:130px;
     box-shadow:0 12px 30px rgba(70,55,30,.05);
+    transition:.3s;
+}
+
+.couple-card:hover{
+    transform:translateY(-6px);
 }
 
 .couple-card h3{
@@ -530,7 +650,11 @@ body{
     font-weight:700;
     font-size:14px;
     box-shadow:0 12px 25px rgba(124,138,92,.3);
-    transition:.3s;
+    transition:
+    transform .3s ease,
+    box-shadow .3s ease,
+    background .3s ease,
+    color .3s ease;
 }
 
 .btn-add-calendar:hover{transform:translateY(-3px);}
@@ -570,7 +694,11 @@ body{
     font-weight:700;
     font-size:14px;
     cursor:pointer;
-    transition:.3s;
+    transition:
+    transform .3s ease,
+    box-shadow .3s ease,
+    background .3s ease,
+    color .3s ease;
 }
 
 .btn-outline:hover{
@@ -593,10 +721,15 @@ body{
     font-size:14px;
     cursor:pointer;
     box-shadow:0 12px 25px rgba(169,131,44,.25);
-    transition:.3s;
+    transition:
+    transform .3s ease,
+    box-shadow .3s ease,
+    background .3s ease,
+    color .3s ease;
 }
 
-.btn-primary:hover{transform:translateY(-3px);}
+.btn-primary:hover{transform:translateY(-3px);
+    box-shadow:0 16px 35px rgba(169,131,44,.35);}
 
 .wish-form{
     margin-top:22px;
@@ -641,6 +774,12 @@ body{
     border-radius:var(--radius-md);
     padding:16px 18px;
     text-align:right;
+    transition:.3s;
+}
+
+.wish-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 14px 28px rgba(0,0,0,.08);
 }
 
 .wish-card .wish-name{
@@ -733,10 +872,14 @@ body{
     cursor:pointer;
     box-shadow:0 10px 25px rgba(169,131,44,.35);
     z-index:9999;
-    transition:.3s;
+    transition:
+    transform .3s ease,
+    box-shadow .3s ease,
+    background .3s ease,
+    color .3s ease;
 }
 
-#musicBtn:hover{transform:scale(1.08);}
+#musicBtn:hover{ transform:scale(1.08) rotate(15deg);}
 
 /* ---------- Toast ---------- */
 
@@ -765,6 +908,9 @@ body{
 
 ::-webkit-scrollbar{width:8px;}
 ::-webkit-scrollbar-thumb{background:var(--pink);border-radius:20px;}
+::-webkit-scrollbar-track{
+    background:#f6f2e8;
+}
 ::selection{background:var(--pink);color:#fff;}
 
 /* ---------- Reduced motion ---------- */
@@ -779,8 +925,12 @@ body{
 
     .floral-frame{padding:22px 16px 34px;}
     .arch-frame .arch-content{padding:44px 16px 170px;}
-    .cover-title{font-size:40px;}
     .hero-title{font-size:48px;}
+
+    .cover-card{min-height:460px;padding:22px;}
+    .names{font-size:40px;}
+    .names span{font-size:28px;}
+    .flower{width:150px;}
 
     .couple-cards{gap:14px;}
     .couple-card{padding:20px 16px;min-width:110px;}
@@ -795,6 +945,4 @@ body{
     .section{padding:50px 18px;}
 
     .calendar-grid{font-size:11px;}
-
-    .cover-flowers img{width:44px;}
 }
