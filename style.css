@@ -37,6 +37,8 @@ body{
         #FDF3F6 50%,
         #FCF7F1 100%
     );
+    overflow-x:hidden;
+    overflow-y:auto;
     color:var(--ink);
     width:100%;
     min-height:100vh;

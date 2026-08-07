@@ -65,7 +65,79 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /* ---------------------------------------------
-       2) شاشة الغلاف — فتح الدعوة
+       2) التمرير التلقائي البطيء بعد فتح الدعوة
+       (Auto-scroll: constant speed, cancellable by
+       any user interaction, safe against duplicates,
+       works on desktop / Android Chrome / iOS Safari)
+    --------------------------------------------- */
+
+    var autoScrollRAF = null;
+    var autoScrollActive = false;
+
+    // سرعة التمرير بالبكسل لكل إطار (ثابتة، بدون تسارع أو تباطؤ)
+    var AUTO_SCROLL_STEP = 1;
+
+    // الأحداث التي تعتبر "تدخل يدوي من المستخدم" فتوقف التمرير التلقائي فوراً
+    var USER_INTERRUPT_EVENTS = [
+        'wheel',
+        'touchstart',
+        'pointerdown',
+        'mousedown',
+        'keydown'
+    ];
+
+    function handleUserInterrupt() {
+        stopAutoScroll();
+    }
+
+    function startAutoScroll() {
+
+        // امنع إنشاء أكثر من مؤقّت/حلقة تمرير في نفس الوقت
+        if (autoScrollActive) return;
+        autoScrollActive = true;
+
+        // أوقف التمرير التلقائي فور أي تفاعل يدوي من المستخدم
+        USER_INTERRUPT_EVENTS.forEach(function (evt) {
+            window.addEventListener(evt, handleUserInterrupt, { passive: true });
+        });
+
+        function step() {
+
+            if (!autoScrollActive) return;
+
+            var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            var current = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (current >= maxScroll - 1) {
+                stopAutoScroll();
+                return;
+            }
+
+            window.scrollBy(0, AUTO_SCROLL_STEP);
+
+            autoScrollRAF = window.requestAnimationFrame(step);
+        }
+
+        autoScrollRAF = window.requestAnimationFrame(step);
+    }
+
+    function stopAutoScroll() {
+
+        if (!autoScrollActive) return;
+        autoScrollActive = false;
+
+        if (autoScrollRAF !== null) {
+            window.cancelAnimationFrame(autoScrollRAF);
+            autoScrollRAF = null;
+        }
+
+        USER_INTERRUPT_EVENTS.forEach(function (evt) {
+            window.removeEventListener(evt, handleUserInterrupt);
+        });
+    }
+
+    /* ---------------------------------------------
+       3) شاشة الغلاف — فتح الدعوة
     --------------------------------------------- */
 
     function initCover() {
@@ -80,72 +152,49 @@ document.addEventListener('DOMContentLoaded', function () {
 
         openBtn.addEventListener('click', function () {
 
-    // كونفيتي
-    if (window.confetti && !reduceMotion) {
-        window.confetti({
-            particleCount: 120,
-            spread: 90,
-            startVelocity: 45,
-            origin: { y: 0.6 },
-            colors: ['#a9832c', '#e6d9b8', '#7c8a5c', '#9aa878', '#ffffff']
+            // كونفيتي
+            if (window.confetti && !reduceMotion) {
+                window.confetti({
+                    particleCount: 120,
+                    spread: 90,
+                    startVelocity: 45,
+                    origin: { y: 0.6 },
+                    colors: ['#a9832c', '#e6d9b8', '#7c8a5c', '#9aa878', '#ffffff']
+                });
+            }
+
+            cover.classList.add('fade-out');
+
+            // تشغيل الموسيقى
+            if (music) {
+                music.volume = 0.5;
+                music.play().then(() => {
+                    musicBtn?.classList.add('playing');
+                }).catch(() => {});
+            }
+
+            setTimeout(() => {
+
+                cover.style.display = "none";
+                invite.classList.add("show");
+
+                document.body.style.overflow = "";
+
+                revealVisibleSections();
+
+                // يبدأ النزول التلقائي بعد فتح الدعوة
+                setTimeout(() => {
+                    startAutoScroll();
+                }, 300);
+
+            }, 850);
         });
-    }
 
-    cover.classList.add('fade-out');
-
-    // تشغيل الموسيقى
-    if (music) {
-        music.volume = 0.5;
-        music.play().then(() => {
-            musicBtn?.classList.add('playing');
-        }).catch(() => {});
-    }
-
-    setTimeout(() => {
-
-    cover.style.display = "none";
-    invite.classList.add("show");
-
-    document.body.style.overflow = "";
-
-    revealVisibleSections();
-
-    // يبدأ النزول بعد فتح الدعوة
-    setTimeout(() => {
-        slowScrollToBottom(); // 12 ثانية
-    }, 300);
-
-}, 850);
-
-
-// ===============================
-// Slow Auto Scroll
-// ===============================
-function slowScrollToBottom() {
-
-    const speed = 1.8; // عدد البكسلات في كل حركة (كل ما يقل يبقى أبطأ)
-
-    const interval = setInterval(() => {
-
-        window.scrollBy(0, speed);
-
-        const bottomReached =
-            window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
-
-        if (bottomReached) {
-            clearInterval(interval);
-        }
-
-    }, 16); // حوالي 60 إطار في الثانية
-}
-
-});
-
-document.body.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------
-       3) ظهور الأقسام تدريجياً عند التمرير
+       4) ظهور الأقسام تدريجياً عند التمرير
     --------------------------------------------- */
 
     var revealTargets = [];
@@ -189,7 +238,7 @@ document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------
-       4) العد التنازلي
+       5) العد التنازلي
     --------------------------------------------- */
 
     function initCountdown() {
@@ -235,7 +284,7 @@ document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------
-       5) تقويم أغسطس 2026 مع تظليل يوم الفرح
+       6) تقويم أغسطس 2026 مع تظليل يوم الفرح
     --------------------------------------------- */
 
     function initCalendar() {
@@ -281,7 +330,7 @@ document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------
-       6) زر "أضِف إلى التقويم"
+       7) زر "أضِف إلى التقويم"
     --------------------------------------------- */
 
     function toGCalDate(date) {
@@ -317,7 +366,7 @@ document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------
-       7) سجل التهاني — متصل بـ Supabase (مشترك لكل الزوار)
+       8) سجل التهاني — متصل بـ Supabase (مشترك لكل الزوار)
        fallback على localStorage لو الاتصال فشل
     --------------------------------------------- */
 
@@ -537,7 +586,7 @@ document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------
-       8) زر الموسيقى
+       9) زر الموسيقى
     --------------------------------------------- */
 
     function initMusic() {
@@ -565,7 +614,7 @@ document.body.style.overflow = "hidden";
     }
 
     /* ---------------------------------------------
-       9) التنبيهات (Toast)
+       10) التنبيهات (Toast)
     --------------------------------------------- */
 
     var toastTimer = null;
