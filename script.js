@@ -19,6 +19,18 @@ document.addEventListener('DOMContentLoaded', function () {
     var reduceMotion = window.matchMedia &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // اكتشاف موثوق لأجهزة iOS (آيفون/آيباد)، بما فيها iPadOS 13+
+    // التي تخفي نفسها كـ Mac في الـ userAgent لكنها تدعم اللمس
+    function isIOSDevice() {
+        var ua = navigator.userAgent || navigator.vendor || '';
+        var isAppleTouch = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        var isIPadOS13Plus = navigator.platform === 'MacIntel' &&
+            navigator.maxTouchPoints && navigator.maxTouchPoints > 1;
+        return isAppleTouch || !!isIPadOS13Plus;
+    }
+
+    var IS_IOS = isIOSDevice();
+
     /* ---------------------------------------------
        1) البتلات المتساقطة (صورة ورد حقيقية)
     --------------------------------------------- */
@@ -27,6 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var container = document.getElementById('petals');
         if (!container || reduceMotion) return;
+
+        // على iOS نقلل عدد وسرعة إنشاء البتلات لتفادي إثقال Safari
+        var initialCount = IS_IOS ? 3 : 5;
+        var spawnIntervalMs = IS_IOS ? 3200 : 1800;
 
         function spawnPetal() {
 
@@ -56,12 +72,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // بتلات أولية
-        for (var i = 0; i < 5; i++) {
+        for (var i = 0; i < initialCount; i++) {
             window.setTimeout(spawnPetal, i * 600);
         }
 
-        // بتلات مستمرة كل فترة
-        window.setInterval(spawnPetal, 1800);
+        // بتلات مستمرة كل فترة (كل بتلة تُزال من الـ DOM تلقائياً
+        // بعد انتهاء الأنيميشن الخاصة بها، فلا يحدث تراكم عناصر)
+        window.setInterval(spawnPetal, spawnIntervalMs);
     }
 
     /* ---------------------------------------------
@@ -72,11 +89,10 @@ document.addEventListener('DOMContentLoaded', function () {
     --------------------------------------------- */
 
     let autoScrollActive = false;
-    let autoScrollTimer = null;
+    let autoScrollRAF = null;
 
-    // سرعة التمرير بالبكسل لكل تكة (ثابتة، بدون تسارع أو تباطؤ)
+    // سرعة التمرير بالبكسل لكل إطار (ثابتة، بدون تسارع أو تباطؤ)
     var AUTO_SCROLL_SPEED = 1.2;
-    var AUTO_SCROLL_INTERVAL_MS = 16;
 
     // الأحداث التي تعتبر "تدخل يدوي من المستخدم" فتوقف التمرير التلقائي فوراً
     var USER_INTERRUPT_EVENTS = [
@@ -93,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function startAutoScroll() {
 
-        // امنع إنشاء أكثر من مؤقّت في نفس الوقت
+        // امنع إنشاء أكثر من loop في نفس الوقت
         if (autoScrollActive) return;
         autoScrollActive = true;
 
@@ -102,19 +118,30 @@ document.addEventListener('DOMContentLoaded', function () {
             window.addEventListener(evt, handleUserInterrupt, { passive: true });
         });
 
-        autoScrollTimer = window.setInterval(function () {
+        // scrollingElement هو العنصر الصحيح دائماً (html عادة) الذي
+        // يمثل مساحة التمرير الفعلية للصفحة على كل المتصفحات بما فيها
+        // Safari على iOS، بعكس الاعتماد على window.scrollBy وحدها
+        var scroller = document.scrollingElement || document.documentElement;
 
-            var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-            var current = window.pageYOffset || document.documentElement.scrollTop;
+        function step() {
+
+            if (!autoScrollActive) return;
+
+            var maxScroll = scroller.scrollHeight - window.innerHeight;
+            var current = scroller.scrollTop;
 
             if (current >= maxScroll - 1) {
                 stopAutoScroll();
                 return;
             }
 
-            window.scrollBy(0, AUTO_SCROLL_SPEED);
+            scroller.scrollTop = current + AUTO_SCROLL_SPEED;
 
-        }, AUTO_SCROLL_INTERVAL_MS);
+            // loop واحد فقط: كل إطار يستدعي نفسه مرة واحدة
+            autoScrollRAF = window.requestAnimationFrame(step);
+        }
+
+        autoScrollRAF = window.requestAnimationFrame(step);
     }
 
     function stopAutoScroll() {
@@ -122,9 +149,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!autoScrollActive) return;
         autoScrollActive = false;
 
-        if (autoScrollTimer !== null) {
-            window.clearInterval(autoScrollTimer);
-            autoScrollTimer = null;
+        if (autoScrollRAF !== null) {
+            window.cancelAnimationFrame(autoScrollRAF);
+            autoScrollRAF = null;
         }
 
         USER_INTERRUPT_EVENTS.forEach(function (evt) {
@@ -148,8 +175,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         openBtn.addEventListener('click', function () {
 
-            // كونفيتي
-            if (window.confetti && !reduceMotion) {
+            // كونفيتي — نعطّلها على iPhone/iPad فقط لأن canvas-confetti
+            // يثقل Safari وقت فتح الدعوة ويساهم في الـ lag/الشاشة البيضاء.
+            // تبقى تعمل بشكل طبيعي على Desktop وAndroid.
+            if (window.confetti && !reduceMotion && !IS_IOS) {
                 window.confetti({
                     particleCount: 120,
                     spread: 90,
@@ -161,12 +190,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             cover.classList.add('fade-out');
 
-            // تشغيل الموسيقى
+            // تشغيل الموسيقى من نفس الـ click event مباشرة (بدون أي انتظار
+            // قبله) حتى يقبلها Safari ضمن سياسة الـ autoplay الخاصة به.
+            // play() غير معطِّلة (non-blocking) لباقي الكود، وأي رفض من
+            // Safari يُلتقط في catch بدون التأثير على بقية التنفيذ.
             if (music) {
                 music.volume = 0.5;
                 music.play().then(() => {
                     musicBtn?.classList.add('playing');
-                }).catch(() => {});
+                }).catch(() => {
+                    // Safari رفض التشغيل التلقائي، لا مشكلة، الزر اليدوي يبقى متاحاً
+                });
             }
 
             setTimeout(() => {

@@ -27,7 +27,10 @@
 
 *{margin:0;padding:0;box-sizing:border-box;}
 
-html{font-size:16px;scroll-behavior:smooth;}
+/* scroll-behavior: auto بدل smooth — لأن الـ JavaScript يتحكم في
+   Auto Scroll بنفسه عبر requestAnimationFrame، ووجود smooth scrolling
+   على مستوى CSS كان يتعارض معه ويسبب حركة متقطعة/lag على iOS Safari */
+html{font-size:16px;scroll-behavior:auto;}
 
 body{
     font-family:var(--font-arabic);
@@ -43,6 +46,27 @@ body{
     width:100%;
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- إصلاحات خاصة بـ iOS Safari فقط ----------
+   @supports (-webkit-touch-callout: none) يستهدف متصفحات
+   WebKit على iOS حصراً (Safari وكل المتصفحات المبنية عليه مثل
+   Chrome/Firefox iOS)، فلا يؤثر إطلاقاً على Desktop أو Android */
+@supports (-webkit-touch-callout: none) {
+
+    html{
+        scroll-behavior:auto !important;
+    }
+
+    body{
+        -webkit-overflow-scrolling:touch;
+    }
+
+    /* تخفيف بسيط لتكلفة الرسم على البتلات في iOS فقط،
+       بدون أي تغيير ملحوظ في الشكل أو المكان */
+    .petal img{
+        filter:none;
+    }
 }
 
 /* ---------- Falling petals (صور ورد حقيقية بدل الإيموجي) ---------- */
@@ -929,7 +953,8 @@ body{
     .arch-frame .arch-content{padding:44px 16px 170px;}
     .hero-title{font-size:48px;}
 
-    .cover-card{min-height:460px;padding:22px;}
+    /* تصحيح: العنصر الفعلي في HTML هو .cover وليس .cover-card */
+    .cover{min-height:460px;padding:22px;}
     .names{font-size:40px;}
     .names span{font-size:28px;}
     .flower{width:150px;}
