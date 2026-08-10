@@ -71,11 +71,12 @@ document.addEventListener('DOMContentLoaded', function () {
        works on desktop / Android Chrome / iOS Safari)
     --------------------------------------------- */
 
-    var autoScrollRAF = null;
-    var autoScrollActive = false;
+    let autoScrollActive = false;
+    let autoScrollTimer = null;
 
-    // سرعة التمرير بالبكسل لكل إطار (ثابتة، بدون تسارع أو تباطؤ)
-    var AUTO_SCROLL_STEP = 1;
+    // سرعة التمرير بالبكسل لكل تكة (ثابتة، بدون تسارع أو تباطؤ)
+    var AUTO_SCROLL_SPEED = 1.2;
+    var AUTO_SCROLL_INTERVAL_MS = 16;
 
     // الأحداث التي تعتبر "تدخل يدوي من المستخدم" فتوقف التمرير التلقائي فوراً
     var USER_INTERRUPT_EVENTS = [
@@ -92,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function startAutoScroll() {
 
-        // امنع إنشاء أكثر من مؤقّت/حلقة تمرير في نفس الوقت
+        // امنع إنشاء أكثر من مؤقّت في نفس الوقت
         if (autoScrollActive) return;
         autoScrollActive = true;
 
@@ -101,9 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
             window.addEventListener(evt, handleUserInterrupt, { passive: true });
         });
 
-        function step() {
-
-            if (!autoScrollActive) return;
+        autoScrollTimer = window.setInterval(function () {
 
             var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
             var current = window.pageYOffset || document.documentElement.scrollTop;
@@ -113,12 +112,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            window.scrollBy(0, AUTO_SCROLL_STEP);
+            window.scrollBy(0, AUTO_SCROLL_SPEED);
 
-            autoScrollRAF = window.requestAnimationFrame(step);
-        }
-
-        autoScrollRAF = window.requestAnimationFrame(step);
+        }, AUTO_SCROLL_INTERVAL_MS);
     }
 
     function stopAutoScroll() {
@@ -126,9 +122,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!autoScrollActive) return;
         autoScrollActive = false;
 
-        if (autoScrollRAF !== null) {
-            window.cancelAnimationFrame(autoScrollRAF);
-            autoScrollRAF = null;
+        if (autoScrollTimer !== null) {
+            window.clearInterval(autoScrollTimer);
+            autoScrollTimer = null;
         }
 
         USER_INTERRUPT_EVENTS.forEach(function (evt) {
@@ -179,13 +175,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 invite.classList.add("show");
 
                 document.body.style.overflow = "";
+                document.documentElement.style.overflow = "";
 
-                revealVisibleSections();
+                // انتظر إطارين (رسم كامل) حتى ينتهي Safari من إعادة
+                // حساب الـ layout والارتفاع بعد تغيير display/class،
+                // فيتجنب الشاشة البيضاء والـ lag على iPhone
+                requestAnimationFrame(() => {
 
-                // يبدأ النزول التلقائي بعد فتح الدعوة
-                setTimeout(() => {
-                    startAutoScroll();
-                }, 300);
+                    requestAnimationFrame(() => {
+
+                        revealVisibleSections();
+
+                        // يبدأ النزول التلقائي بعد فتح الدعوة
+                        setTimeout(() => {
+
+                            if (!reduceMotion) {
+                                startAutoScroll();
+                            }
+
+                        }, 1000);
+
+                    });
+
+                });
 
             }, 850);
         });
